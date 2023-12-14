@@ -194,7 +194,7 @@ export class FFmpeg {
       return fetch(url)
         .then(response => response.blob())
         .then(blob => {
-          const blobUrl = URL.createObjectURL(blob);
+          const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/javascript' }));
           this.#worker = new Worker(blobUrl, {
             type: "module",
           });
