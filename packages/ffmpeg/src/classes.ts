@@ -34,7 +34,7 @@ type FFMessageOptions = {
  * ```
  */
 export class FFmpeg {
-  #worker: Worker | null = null;
+  worker: Worker | null = null;
   /**
    * #resolves and #rejects tracks Promise resolves and rejects to
    * be called when we receive message from web worker.
@@ -51,8 +51,8 @@ export class FFmpeg {
    * register worker message event handlers.
    */
   #registerHandlers = () => {
-    if (this.#worker) {
-      this.#worker.onmessage = ({
+    if (this.worker) {
+      this.worker.onmessage = ({
         data: { id, type, data },
       }: FFMessageEventCallback) => {
         switch (type) {
@@ -98,13 +98,13 @@ export class FFmpeg {
     trans: Transferable[] = [],
     signal?: AbortSignal
   ): Promise<CallbackData> => {
-    if (!this.#worker) {
+    if (!this.worker) {
       return Promise.reject(ERROR_NOT_LOADED);
     }
 
     return new Promise((resolve, reject) => {
       const id = getMessageID();
-      this.#worker && this.#worker.postMessage({ id, type, data }, trans);
+      this.worker && this.worker.postMessage({ id, type, data }, trans);
       this.#resolves[id] = resolve;
       this.#rejects[id] = reject;
 
@@ -188,14 +188,14 @@ export class FFmpeg {
     config: FFMessageLoadConfig = {},
     { signal }: FFMessageOptions = {}
   ): Promise<IsFirst> => {
-    if (!this.#worker) {
+    if (!this.worker) {
       const url = new URL("./worker.js", import.meta.url);
       // convert url to blob url
       return fetch(url)
         .then(response => response.blob())
         .then(blob => {
           const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/javascript' }));
-          this.#worker = new Worker(blobUrl, {
+          this.worker = new Worker(blobUrl, {
             type: "module",
           });
           this.#registerHandlers();
@@ -207,6 +207,9 @@ export class FFmpeg {
             undefined,
             signal
           ) as Promise<IsFirst>;
+        }).catch(e => {
+          console.log('Error loading worker script:', e)
+          return false
         });
     } else {
       return this.#send(
@@ -275,9 +278,9 @@ export class FFmpeg {
       delete this.#resolves[id];
     }
 
-    if (this.#worker) {
-      this.#worker.terminate();
-      this.#worker = null;
+    if (this.worker) {
+      this.worker.terminate();
+      this.worker = null;
       this.loaded = false;
     }
   };
