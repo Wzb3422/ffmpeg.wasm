@@ -1,6 +1,6 @@
 {
   "name": "ffmpeg-cross-origin",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "FFmpeg WebAssembly version for browser",
   "main": "./dist/umd/ffmpeg.js",
   "types": "./dist/esm/index.d.ts",
