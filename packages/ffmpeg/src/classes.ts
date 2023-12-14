@@ -189,19 +189,35 @@ export class FFmpeg {
     { signal }: FFMessageOptions = {}
   ): Promise<IsFirst> => {
     if (!this.#worker) {
-      this.#worker = new Worker(new URL("./worker.js", import.meta.url), {
-        type: "module",
-      });
-      this.#registerHandlers();
+      const url = new URL("./worker.js", import.meta.url);
+      // convert url to blob url
+      return fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          this.#worker = new Worker(blobUrl, {
+            type: "module",
+          });
+          this.#registerHandlers();
+          return this.#send(
+            {
+              type: FFMessageType.LOAD,
+              data: config,
+            },
+            undefined,
+            signal
+          ) as Promise<IsFirst>;
+        });
+    } else {
+      return this.#send(
+        {
+          type: FFMessageType.LOAD,
+          data: config,
+        },
+        undefined,
+        signal
+      ) as Promise<IsFirst>;
     }
-    return this.#send(
-      {
-        type: FFMessageType.LOAD,
-        data: config,
-      },
-      undefined,
-      signal
-    ) as Promise<IsFirst>;
   };
 
   /**
